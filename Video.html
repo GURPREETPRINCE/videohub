@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>VideoHub - Video</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f0f0f;
+            color: white;
+        }
+
+        /* Header */
+        header {
+            height: 65px;
+            background: #171717;
+            display: flex;
+            align-items: center;
+            padding: 0 5%;
+            border-bottom: 1px solid #292929;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: bold;
+            color: #ff3b3b;
+            cursor: pointer;
+        }
+
+        /* Main */
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
+        }
+
+        /* Video */
+        .video-container {
+            width: 100%;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .video-embed {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            background: #000;
+        }
+
+        .video-embed iframe {
+            border: 0;
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Information */
+        .video-info {
+            padding: 22px 0;
+        }
+
+        .video-title {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .video-meta {
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 18px;
+        }
+
+        .video-meta span {
+            margin-right: 18px;
+        }
+
+        .description {
+            color: #ccc;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        /* Buttons */
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+            padding: 11px 18px;
+            border-radius: 6px;
+            background: #292929;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #3b3b3b;
+        }
+
+        .like-button.liked {
+            background: #ff3b3b;
+        }
+
+        .like-count {
+            margin-left: 6px;
+            color: #ccc;
+        }
+
+        .back-button {
+            background: #ff3b3b;
+        }
+
+        .back-button:hover {
+            background: #e52f2f;
+        }
+
+        /* Related videos */
+        .related {
+            margin-top: 45px;
+        }
+
+        .related h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .related-card {
+            background: #191919;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .related-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .related-card img {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            display: block;
+        }
+
+        .related-title {
+            padding: 12px;
+            font-size: 15px;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+
+            header {
+                padding: 0 20px;
+            }
+
+            .container {
+                width: 94%;
+                margin: 20px auto;
+            }
+
+            .video-title {
+                font-size: 22px;
+            }
+
+            .related-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo" onclick="goHome()">VideoHub</div>
+    </header>
+
+    <main class="container">
+
+        <!-- Video Player -->
+        <div class="video-container">
+            <div class="video-embed">
+                <iframe
+                    id="videoPlayer"
+                    src="https://player.mediadelivery.net/embed/762355/b04b794d-c403-4bcd-9e1c-ded201ed8913?autoplay=true&loop=false&muted=true&preload=true&responsive=true"
+                    loading="lazy"
+                    allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;fullscreen;"
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+
+        <!-- Video Information -->
+        <section class="video-info">
+
+            <h1 class="video-title" id="videoTitle">
+                Loading...
+            </h1>
+
+            <div class="video-meta">
+                <span id="videoViews">0 views</span>
+                <span id="videoCategory">Category</span>
+                <span id="videoDate">Today</span>
+            </div>
+
+            <p class="description" id="videoDescription">
+                Loading video description...
+            </p>
+
+            <div class="actions">
+                <button id="likeButton" class="like-button" onclick="likeVideo()">👍 Like <span class="like-count" id="likeCount">0</span></button>
+
+                <button onclick="shareVideo()">🔗 Share</button>
+
+                <button class="back-button" onclick="goHome()">
+                    ← Back to VideoHub
+                </button>
+            </div>
+
+        </section>
+
+        <!-- Related Videos -->
+        <section class="related">
+
+            <h2>Related Videos</h2>
+
+            <div class="related-grid" id="relatedVideos"></div>
+
+        </section>
+
+    </main>
+
+    <script>
+        const SUPABASE_URL = "https://tfrtklmrclcshgtscyuv.supabase.co";
+        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_NTXTSlPXyrkDVVLTEwINYQ_pquFY6jB";
+        const BUNNY_LIBRARY_ID = "762355";
+        const BUNNY_PLAYER_BASE = "https://player.mediadelivery.net/embed/";
+
+        const params = new URLSearchParams(window.location.search);
+        const videoId = Number(params.get("id"));
+
+        const videoPlayer = document.getElementById("videoPlayer");
+        const videoTitle = document.getElementById("videoTitle");
+        const videoViews = document.getElementById("videoViews");
+        const videoCategory = document.getElementById("videoCategory");
+        const videoDate = document.getElementById("videoDate");
+        const videoDescription = document.getElementById("videoDescription");
+        const relatedContainer = document.getElementById("relatedVideos");
+        const likeButton = document.getElementById("likeButton");
+
+        let currentVideo = null;
+
+        function formatViews(number) {
+            number = Number(number) || 0;
+            if (number >= 1000000) return (number / 1000000).toFixed(1).replace(".0", "") + "M";
+            if (number >= 1000) return (number / 1000).toFixed(1).replace(".0", "") + "K";
+            return String(number);
+        }
+
+        function buildBunnyEmbed(videoId) {
+            return BUNNY_PLAYER_BASE + BUNNY_LIBRARY_ID + "/" + encodeURIComponent(videoId) +
+                "?autoplay=true&loop=false&muted=true&preload=true&responsive=true";
+        }
+
+        async function fetchVideos() {
+            const response = await fetch(
+                SUPABASE_URL +
+                "/rest/v1/videos?select=id,title,description,category,thumbnail_url,views,duration,bunny_video_id,status,created_at&status=eq.published&order=created_at.desc",
+                {
+                    headers: {
+                        "apikey": SUPABASE_PUBLISHABLE_KEY
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Could not load videos (HTTP " + response.status + ").");
+            }
+
+            return response.json();
+        }
+
+        function renderRelatedVideos(videos) {
+            relatedContainer.innerHTML = "";
+
+            videos
+                .filter(video => Number(video.id) !== videoId)
+                .slice(0, 3)
+                .forEach(video => {
+                    const card = document.createElement("div");
+                    card.className = "related-card";
+                    card.innerHTML = `
+                        <img src="${escapeHtml(video.thumbnail_url || "")}" alt="${escapeHtml(video.title)}">
+                        <div class="related-title">${escapeHtml(video.title)}</div>
+                    `;
+                    card.addEventListener("click", () => {
+                        window.location.href = "video.html?id=" + video.id;
+                    });
+                    relatedContainer.appendChild(card);
+                });
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function setNotFound(message) {
+            videoTitle.textContent = "Video Not Found";
+            videoDescription.textContent = message;
+            videoViews.textContent = "";
+            videoCategory.textContent = "";
+            videoDate.textContent = "";
+            videoPlayer.removeAttribute("src");
+            relatedContainer.innerHTML = "";
+        }
+
+        function updateLikeButton() {
+            if (!currentVideo) return;
+
+            const liked = localStorage.getItem("videohub-liked-" + currentVideo.id) === "true";
+            const count = Number(localStorage.getItem("videohub-like-count-" + currentVideo.id)) || 0;
+
+            likeButton.classList.toggle("liked", liked);
+            likeButton.innerHTML = liked
+                ? '❤️ Liked <span class="like-count">' + count + '</span>'
+                : '👍 Like <span class="like-count">' + count + '</span>';
+        }
+
+        function likeVideo() {
+            if (!currentVideo) return;
+
+            const likeKey = "videohub-liked-" + currentVideo.id;
+            const countKey = "videohub-like-count-" + currentVideo.id;
+            let liked = localStorage.getItem(likeKey) === "true";
+            let count = Number(localStorage.getItem(countKey)) || 0;
+
+            liked = !liked;
+            count = liked ? count + 1 : Math.max(0, count - 1);
+
+            localStorage.setItem(likeKey, String(liked));
+            localStorage.setItem(countKey, String(count));
+            updateLikeButton();
+        }
+
+        async function shareVideo() {
+            const shareData = {
+                title: currentVideo ? currentVideo.title : "VideoHub",
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                } catch (error) {
+                    // User cancelled sharing.
+                }
+                return;
+            }
+
+            if (navigator.clipboard) {
+                try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    alert("Video link copied!");
+                } catch (error) {
+                    alert("Copy failed. Please copy the URL manually.");
+                }
+            } else {
+                alert("Copy the video URL from your browser address bar.");
+            }
+        }
+
+        function goHome() {
+            window.location.href = "index.html";
+        }
+
+        async function loadVideoPage() {
+            if (!Number.isInteger(videoId) || videoId <= 0) {
+                setNotFound("Please open a valid video link.");
+                return;
+            }
+
+            try {
+                const videos = await fetchVideos();
+                currentVideo = videos.find(video => Number(video.id) === videoId);
+
+                if (!currentVideo) {
+                    setNotFound("This video is not published or does not exist.");
+                    return;
+                }
+
+                document.title = currentVideo.title + " - VideoHub";
+                videoTitle.textContent = currentVideo.title;
+                videoCategory.textContent = currentVideo.category;
+                videoViews.textContent = formatViews(currentVideo.views) + " views";
+                videoDescription.textContent = currentVideo.description || "No description available.";
+
+                const created = currentVideo.created_at
+                    ? new Date(currentVideo.created_at)
+                    : null;
+                videoDate.textContent = created && !Number.isNaN(created.getTime())
+                    ? created.toLocaleDateString()
+                    : "";
+
+                videoPlayer.src = buildBunnyEmbed(currentVideo.bunny_video_id);
+                updateLikeButton();
+                renderRelatedVideos(videos);
+
+            } catch (error) {
+                console.error(error);
+                setNotFound("Unable to load this video right now. Please try again.");
+            }
+        }
+
+        loadVideoPage();
+    </script>
+
+</body>
+</html>
